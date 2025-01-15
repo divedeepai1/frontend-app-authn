@@ -1,6 +1,7 @@
 import { camelCaseObject } from '@edx/frontend-platform';
 import { logError, logInfo } from '@edx/frontend-platform/logging';
 import { call, put, takeEvery } from 'redux-saga/effects';
+import { customBackend } from "../../constants";
 
 import {
   fetchRealtimeValidationsBegin,
@@ -17,6 +18,8 @@ import { getFieldsValidations, registerRequest } from './service';
 
 export function* handleNewUserRegistration(action) {
   try {
+    console.log("inside signup user funtion");
+    const { email, password } = action.payload.registrationInfo;
     yield put(registerNewUserBegin());
 
     const { authenticatedUser, redirectUrl, success } = yield call(registerRequest, action.payload.registrationInfo);
@@ -26,6 +29,41 @@ export function* handleNewUserRegistration(action) {
       redirectUrl,
       success,
     ));
+
+
+    try {
+   
+      
+      const uri = customBackend.url + "/api/openedx/user/register_edx_user";
+      const requestBody = {
+        email,
+        password,
+        edx_based_id:authenticatedUser?.user_id
+      };
+
+      fetch(uri, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`Error: ${res.status} ${res.statusText}`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Response data custom backend:", data);
+        })
+        .catch((error) => {
+          console.error("custom backend catach error:", error);
+        });
+    } catch (error) {
+      console.log("custom backend catach catch error:",error);
+      
+    }
   } catch (e) {
     const statusCodes = [400, 403, 409];
     if (e.response && statusCodes.includes(e.response.status)) {
