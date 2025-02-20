@@ -12,11 +12,19 @@ jobs:
       image: node:20
     steps:
       - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 20
+
       - name: Get SSH Key and set permissions
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY_SANDBOX }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
+          echo -e "${{ secrets.SSH_PRIVATE_KEY_SANDBOX }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST_SANDBOX }} >> ~/.ssh/known_hosts
+
       - name: Deploy Edx
         run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SSH_USER_SANDBOX }}@${{ secrets.SSH_HOST_SANDBOX }} "~/.deploy_authn.sh"
