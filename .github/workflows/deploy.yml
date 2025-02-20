@@ -22,9 +22,12 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo -e "${{ secrets.SSH_PRIVATE_KEY_SANDBOX }}" > ~/.ssh/id_rsa
+          echo -e "${{ secrets.SSH_PRIVATE_KEY_SANDBOX }}" | sed 's/\r$//' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST_SANDBOX }} >> ~/.ssh/known_hosts
 
+      - name: Debug SSH Key
+        run: ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -v ${{ secrets.SSH_USER_SANDBOX }}@${{ secrets.SSH_HOST_SANDBOX }} "exit"
+        
       - name: Deploy Edx
         run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SSH_USER_SANDBOX }}@${{ secrets.SSH_HOST_SANDBOX }} "~/.deploy_authn.sh"
